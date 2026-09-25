@@ -91,9 +91,9 @@ def error_vs_work():
 def leibniz_tail(ns):
     """Scaled signed error and its successive corrections.
 
-    s1 = n * (-1)^n * (pi - L(n))              -> 1 ?
-    s3 = n^3 * ((-1)^n (pi - L(n)) - 1/n)      -> -1/4 ?
-    s5 = n^5 * ((-1)^n (pi - L(n)) - 1/n + 1/(4n^3))  -> 5/16 ?
+    s1 = n * (-1)^n * (pi - L(n))
+    s3 = n^3 * ((-1)^n (pi - L(n)) - 1/n)
+    s5 = n^5 * ((-1)^n (pi - L(n)) - 1/n + 1/(4n^3))
     """
     rows = []
     for n, approx in leibniz_partial_sums(ns):
@@ -158,7 +158,7 @@ def main():
     tail2 = leibniz_tail(ns)
     mp.dps = DPS
     print(f"--- Leibniz error shape (dps={DPS}; max drift vs dps={2 * DPS}) ---")
-    print("  n        s1 (->1?)         s3 (->-1/4?)        s5 (->5/16?)")
+    print("  n                      s1                 s3                 s5")
     worst = mpf(0)
     for (n, s1, s3, s5), (_, t1, t3, t5) in zip(tail, tail2):
         worst = max(worst, abs(s1 - t1), abs(s3 - t3), abs(s5 - t5))
@@ -169,16 +169,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-# --- Experimental loop (filled in from the run on 2026-09-25) -------------
-#
-# Compute:  see output/ -- Leibniz needs ~10^5 terms for 5 digits; Machin
-#           gets ~1.45 digits per term, ~58 digits at 40 terms.
-# Observe:  the Leibniz error is not just "small, about 1/n" -- it is
-#           *exactly structured*: n*(-1)^n*(pi - L(n)) -> 1, the next
-#           correction -> -1/4, the next -> 5/16, stable at 2x precision.
-# Conjecture: (-1)^n (pi - L(n)) = sum_m E_{2m} * 2 / (2n)^(2m+1), with
-#           E_0, E_2, E_4, ... = 1, -1, 5, -61, ... the Euler numbers.
-# Attack:   predict the next coefficient (-61 * 2 / 2^7 = -61/64) and test
-#           s7 = n^7 * (remainder after the 5/16 term) at n = 10^4 and
-#           10^5 with dps = 120 then 240; any drift away from -61/64 kills it.
