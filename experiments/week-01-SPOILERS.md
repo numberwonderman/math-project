@@ -4,6 +4,62 @@ This is Claude's experimental loop for `week-01-pi-error-vs-work.py`. It was
 written on 2026-09-25, before the Week 1 reading. It was moved out of the
 script so you can do your own loop first and then compare.
 
+## Code
+
+The error-shape analysis, moved out of `week-01-pi-error-vs-work.py`.
+It prints its table; the old `output/week-01-leibniz-tail.csv` is no longer kept.
+
+```python
+# Run from experiments/. Reuses leibniz_partial_sums from the week-01 script.
+import importlib.util
+from pathlib import Path
+from mpmath import mp, mpf
+
+spec = importlib.util.spec_from_file_location("w01", Path("week-01-pi-error-vs-work.py"))
+w01 = importlib.util.module_from_spec(spec); spec.loader.exec_module(w01)
+leibniz_partial_sums = w01.leibniz_partial_sums
+DPS = 60
+
+
+def leibniz_tail(ns):
+    """Scaled signed error and its successive corrections.
+
+    s1 = n * (-1)^n * (pi - L(n))
+    s3 = n^3 * ((-1)^n (pi - L(n)) - 1/n)
+    s5 = n^5 * ((-1)^n (pi - L(n)) - 1/n + 1/(4n^3))
+    """
+    rows = []
+    for n, approx in leibniz_partial_sums(ns):
+        e = (-1) ** n * (mp.pi - approx)
+        n_ = mpf(n)
+        s1 = n_ * e
+        s3 = n_**3 * (e - 1 / n_)
+        s5 = n_**5 * (e - 1 / n_ + 1 / (4 * n_**3))
+        rows.append((n, s1, s3, s5))
+    return rows
+
+
+def main():
+    mp.dps = DPS
+    ns = [10, 11, 100, 101, 1000, 1001, 10000, 10001]
+    tail = leibniz_tail(ns)
+
+    # Verify at 2x precision: the scaled constants must not move.
+    mp.dps = 2 * DPS
+    tail2 = leibniz_tail(ns)
+    mp.dps = DPS
+    print(f"--- Leibniz error shape (dps={DPS}; max drift vs dps={2 * DPS}) ---")
+    print("  n                      s1                 s3                 s5")
+    worst = mpf(0)
+    for (n, s1, s3, s5), (_, t1, t3, t5) in zip(tail, tail2):
+        worst = max(worst, abs(s1 - t1), abs(s3 - t3), abs(s5 - t5))
+        print(f"  {n:<6} {mp.nstr(s1, 15):>18} {mp.nstr(s3, 15):>18} {mp.nstr(s5, 15):>18}")
+    print(f"  max |dps vs 2*dps| drift: {mp.nstr(worst, 3)}")
+
+
+main()
+```
+
 ## Compute
 
 See `output/`. Leibniz needs ~10^5 terms for 5 digits. Machin gets ~1.45

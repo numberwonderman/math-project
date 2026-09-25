@@ -4,14 +4,12 @@ Extends week-01-pi-approximation.py (imported, not modified) with:
   - a high-precision Leibniz partial sum, so the error can be studied
     far below float resolution;
   - Machin's formula, pi = 16 arctan(1/5) - 4 arctan(1/239), as a fast
-    series to compare against Leibniz on the same error-vs-work axes;
-  - a look at the *shape* of the Leibniz error, not just its size.
+    series to compare against Leibniz on the same error-vs-work axes.
 
 Work is measured as number of series terms summed.
 
 Outputs (in experiments/output/):
   week-01-error-vs-work.csv   method, terms, error at working precision
-  week-01-leibniz-tail.csv    n, scaled error n*(-1)^n*(pi - L(n)) and corrections
   week-01-error-vs-work.png   log-log plot of error vs terms
 
 from_the_book() is still a stub in the baseline file. Once the book's
@@ -88,24 +86,6 @@ def error_vs_work():
     return rows
 
 
-def leibniz_tail(ns):
-    """Scaled signed error and its successive corrections.
-
-    s1 = n * (-1)^n * (pi - L(n))
-    s3 = n^3 * ((-1)^n (pi - L(n)) - 1/n)
-    s5 = n^5 * ((-1)^n (pi - L(n)) - 1/n + 1/(4n^3))
-    """
-    rows = []
-    for n, approx in leibniz_partial_sums(ns):
-        e = (-1) ** n * (mp.pi - approx)
-        n_ = mpf(n)
-        s1 = n_ * e
-        s3 = n_**3 * (e - 1 / n_)
-        s5 = n_**5 * (e - 1 / n_ + 1 / (4 * n_**3))
-        rows.append((n, s1, s3, s5))
-    return rows
-
-
 # --- Driver ---------------------------------------------------------------
 
 def write_csv(path, header, rows):
@@ -147,24 +127,7 @@ def main():
     for m, n, err in rows:
         if m == "machin" and n in (1, 2, 5, 10, 20, 40):
             print(f"  terms={n:>3}  error={mp.nstr(err, 3)}")
-    print()
-
-    ns = [10, 11, 100, 101, 1000, 1001, 10000, 10001]
-    tail = leibniz_tail(ns)
-    write_csv(OUT / "week-01-leibniz-tail.csv", ["n", "s1", "s3", "s5"], tail)
-
-    # Verify at 2x precision: the scaled constants must not move.
-    mp.dps = 2 * DPS
-    tail2 = leibniz_tail(ns)
-    mp.dps = DPS
-    print(f"--- Leibniz error shape (dps={DPS}; max drift vs dps={2 * DPS}) ---")
-    print("  n                      s1                 s3                 s5")
-    worst = mpf(0)
-    for (n, s1, s3, s5), (_, t1, t3, t5) in zip(tail, tail2):
-        worst = max(worst, abs(s1 - t1), abs(s3 - t3), abs(s5 - t5))
-        print(f"  {n:<6} {mp.nstr(s1, 15):>18} {mp.nstr(s3, 15):>18} {mp.nstr(s5, 15):>18}")
-    print(f"  max |dps vs 2*dps| drift: {mp.nstr(worst, 3)}")
-    print(f"\nWrote CSVs and plot to {OUT}")
+    print(f"Wrote CSV and plot to {OUT}")
 
 
 if __name__ == "__main__":
