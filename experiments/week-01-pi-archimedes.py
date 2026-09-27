@@ -7,7 +7,7 @@ Work is measured as the number of side-doublings, starting from hexagons
 (k doublings -> polygons with 6 * 2^k sides).
 
 Outputs (in experiments/output/):
-  week-01-archimedes.csv   doublings, sides, lower, upper, errors
+  week-01-archimedes.csv   doublings, sides, lower, upper, errors, log10 errors
   week-01-archimedes.png   log-scale error vs doublings, both bounds
 
 Log: fill in week-01-pi-archimedes-log.md (from LOG-TEMPLATE.md).
@@ -19,7 +19,7 @@ import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-from mpmath import mp, mpf, sqrt
+from mpmath import log10, mp, mpf, sqrt
 
 HERE = Path(__file__).resolve().parent
 OUT = HERE / "output"
@@ -61,9 +61,11 @@ def with_errors(rows):
 def write_csv(path, rows):
     with open(path, "w", newline="") as f:
         w = csv.writer(f)
-        w.writerow(["doublings", "sides", "lower", "upper", "err_lower", "err_upper"])
+        w.writerow(["doublings", "sides", "lower", "upper", "err_lower", "err_upper",
+                    "log10_err_lower", "log10_err_upper"])
         for k, n, lo, hi, el, eu in rows:
-            w.writerow([k, n] + [mp.nstr(v, 20) for v in (lo, hi, el, eu)])
+            w.writerow([k, n] + [mp.nstr(v, 20) for v in (lo, hi, el, eu)]
+                       + [mp.nstr(log10(v), 10) for v in (el, eu)])
 
 
 def plot(rows, path):
@@ -101,10 +103,12 @@ def main():
     mp.dps = DPS
 
     print(f"--- Archimedes, mp.dps={DPS} ---")
-    print("  k      sides        lower bound            upper bound        err_lo     err_hi")
+    print("  k      sides        lower bound            upper bound        err_lo     err_hi"
+          "   log10_lo   log10_hi")
     for k, n, lo, hi, el, eu in rows:
         print(f"  {k:<3} {n:>12}  {mp.nstr(lo, 18):<20} {mp.nstr(hi, 18):<20} "
-              f"{mp.nstr(el, 3):>9}  {mp.nstr(eu, 3):>9}")
+              f"{mp.nstr(el, 3):>9}  {mp.nstr(eu, 3):>9}  "
+              f"{float(log10(el)):>9.3f}  {float(log10(eu)):>9.3f}")
     print(f"  max |dps vs 2*dps| drift in errors: {mp.nstr(drift, 3)}")
     print(f"Wrote CSV and plot to {OUT}")
 
